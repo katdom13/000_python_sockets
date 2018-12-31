@@ -1,9 +1,7 @@
-
 import socket
 import os
 import threading
 
-# 1) The server will wait for clients to connect then request a file
 '''
 Server communication
 
@@ -17,88 +15,52 @@ close()
 '''
 
 # ============== VARIABLES ================
+def session_thread(sock):
 
-host = '192.168.1.5'
-port = 1234
-totalSize = 0
-filename = ''
-server_message = ''
-client_response = ''
+	DEFSIZE = 1024
+	totalSize = 0
+	filename = ''
+	server_message = ''
+	client_response = ''
 
-mySock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-mySock.bind((host, port))
-mySock.listen(5)
-c, addr = mySock.accept()
-
-while True:
-	filename = c.recv(1024).decode()
-	if filename == "q" or not filename:
-		break
+	filename = sock.recv(DEFSIZE).decode()
 	if os.path.isfile(filename):
 		totalSize = os.path.getsize(filename)
 		server_message = 'File exists with size ' +str(totalSize)
-		c.send(server_message.encode())
-		client_response = c.recv(1024).decode()
+		sock.send(server_message.encode())
+		client_response = sock.recv(1024).decode()
 		if client_response == "y":
 			print(client_response)
 			with open(filename, 'rb') as f:
 				readBytes = f.read(1024)
 				if not readBytes:
-					break
-				c.send(readBytes)
+					return
+				sock.send(readBytes)
 		else:
-			break
+			return
 	else:
 		server_message = "File does not exist!"
-		c.send(server_message)
+		sock.send(server_message.encode())
 
-c.close()
-mySock.close()
+def Main():
+	host = '192.168.1.5'
+	port = 1234
 
-'''
-mySock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	mySock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	mySock.bind((host, port))
+	mySock.listen(5)
 
-mySock.bind((host, port))
-mySock.listen(5)
+	print('Server started')
 
-print('Server started')
+	# be able to accept multiple connections
+	while True:
+		c, addr = mySock.accept()
+		print('Connection from <' +str(addr) +'>')
+		thread1 = threading.Thread(target=session_thread, args=(c,))
+		thread1.start()
 
-client, client_addr = mySock.accept()
+	c.close()
+	mySock.close()
 
-while True:
-	filename = client.recv(1024).decode()
-	if not filename or filename == 'q':
-		break
-
-	# 2) If the file exists then we start sending it to the client otherwise we tell them the file does not exist
-
-	if os.path.isfile(filename):
-		# print('File exists')
-		filesize = os.path.getsize(filename)
-		defSize = 1024
-		server_message = 'File exists with size: ' +str(filesize)
-		client.send(server_message.encode())
-
-		client_response = client.recv(1024).decode()
-		
-		#if(str(client_response).lower() == "y"):
-		#	print(str(client_response))
-		
-		if(str(client_response).lower() == 'y'):
-			print(str(client_response))
-			with open(filename, 'rb') as f:
-				while True:
-					readBytes = f.read(defSize)
-					if not readBytes:
-						break
-					client.send(readBytes)
-
-	else:
-		server_message = 'File does not exist'
-		client.send(server_message)
-
-client.close()
-mySock.close()
-		
-'''
-
+if __name__ == '__main__':
+	Main()
