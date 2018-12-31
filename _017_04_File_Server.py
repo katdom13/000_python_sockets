@@ -15,7 +15,7 @@ close()
 '''
 
 # ============== VARIABLES ================
-def session_thread(sock):
+def session_thread(sock, lock):
 
 	DEFSIZE = 1024
 	totalSize = 0
@@ -24,6 +24,9 @@ def session_thread(sock):
 	client_response = ''
 
 	filename = sock.recv(DEFSIZE).decode()
+
+	lock.acquire()
+
 	if os.path.isfile(filename):
 		totalSize = os.path.getsize(filename)
 		server_message = 'File exists with size ' +str(totalSize)
@@ -42,9 +45,13 @@ def session_thread(sock):
 		server_message = "File does not exist!"
 		sock.send(server_message.encode())
 
+	lock.release()
+
 def Main():
 	host = '192.168.1.5'
 	port = 1234
+
+	locket = threading.Lock()
 
 	mySock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	mySock.bind((host, port))
@@ -56,7 +63,7 @@ def Main():
 	while True:
 		c, addr = mySock.accept()
 		print('Connection from <' +str(addr) +'>')
-		thread1 = threading.Thread(target=session_thread, args=(c,))
+		thread1 = threading.Thread(target=session_thread, args=(c, locket))
 		thread1.start()
 
 	c.close()
