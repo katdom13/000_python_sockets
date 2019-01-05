@@ -27,6 +27,9 @@ def session_thread(sock, lock):
 
 	lock.acquire()
 
+	if filename == 'q':
+		sock.close()
+
 	if os.path.isfile(filename):
 		totalSize = os.path.getsize(filename)
 		server_message = 'File exists with size ' +str(totalSize)
