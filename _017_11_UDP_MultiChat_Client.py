@@ -13,17 +13,17 @@ recv()
 close()
 '''
 
-def send_session(sock, server, lock):
+def send_session(sock, server):
 	client_username = raw_input("Username: ")
-	client_message = raw_input("-> ")
+	client_message = raw_input()
 	while client_message != "q":
 		client_message = client_username +": " +client_message
 		sock.sendto(client_message.encode(), server)
-		lock.acquire()
-		client_message = raw_input("-> ")
-		lock.release()
+#		lock.acquire()
+		client_message = raw_input()
+#		lock.release()
 		client_message = client_message.decode()
-		time.sleep(0.1)
+#		time.sleep(0.1)
 
 	sock.sendto(client_message.encode(), server)
 
@@ -47,7 +47,7 @@ mySock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 mySock.bind((host, port))
 
 #send thread
-send_t = threading.Thread(target=send_session, args=(mySock, server, myLock))
+send_t = threading.Thread(target=send_session, args=(mySock, server))
 #recv thread
 recv_t = threading.Thread(target=recv_session, args=(mySock, myLock))
 
